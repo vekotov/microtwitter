@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Microtwitter</title>
+  <style>
+    .navbar {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: space-around;
+      padding: 5px 0px 15px 0px;
+      text-align: center;
+    }
+
+    .head-link {
+      flex: 1;
+    }
+
+    .text {
+      padding-left: 10px;
+    }
+
+    .post {
+      padding-bottom: 15px;
+    }
+
+    .create_post {
+      padding-left: 5%;
+      padding-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="navbar">
+    <div class="head-link">
+      <a href="/">My microtwitter</a>
+    </div>
+    <div class="head-link">
+      <a href="/last_posts">Last Posts</a>
+    </div>
+    <div class="head-link" th:switch="${status}">
+      <a th:case="'no_login'" href="/login">Login</a>
+      <a th:case="'yes_login'" href="/unlogin">Unlogin</a>
+    </div>
+  </div>
+  <div class="create_post">
+    <form name="create_post" method="post" action="/create_post">
+      <textarea name="text" cols="35" rows="5"></textarea>
+      <br>
+      <input type="submit" value="tweet">
+    </form>
+  </div>
+  <div class="post" th:each="post : ${postList}">
+    <b><div th:text="${post.author}">verygoodlogin</div></b>
+    <div th:text="${post.text}" class="text">
+      I am a hero you know that?
+    </div>
+  </div>
+</body>
+
+</html>
