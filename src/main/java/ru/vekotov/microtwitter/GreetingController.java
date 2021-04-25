@@ -1,5 +1,9 @@
 package ru.vekotov.microtwitter;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -14,13 +18,24 @@ import java.util.UUID;
 import static ru.vekotov.microtwitter.MicrotwitterApplication.*;
 
 @Controller
+@EnableMongoRepositories
+@EntityScan
 public class GreetingController {
+    @Autowired
+    public UserRepository userRepository;
+
+    @Autowired
+    public PostRepository postRepository;
+
+    @Autowired
+    public TokenRepository tokenRepository;
 
     @GetMapping("/")
     public String index(@CookieValue(value = "token", defaultValue = "null") String token,
                         Model model) {
-        model.addAttribute("postList", postList);
-        if(tokens.containsKey(token)) model.addAttribute("status", "yes_login");
+        model.addAttribute("postList", postRepository.findAll());
+        Token userToken = tokenRepository.findTokenByToken(token);
+        if(userToken != null) model.addAttribute("status", "yes_login");
         else model.addAttribute("status","no_login");
         return "index";
     }
@@ -29,15 +44,25 @@ public class GreetingController {
     public String createPost(
             @RequestParam(name="text") String text,
             @CookieValue(value = "token", defaultValue = "null") String token) {
-        if(!tokens.containsKey(token)) postList.addFirst(new Post("Anonymous", text));
-        else postList.addFirst(new Post(tokens.get(token).login, text));
+        if(text
+                .replace(" ", "")
+                .replace("\t", "")
+                .replace("\n", "")
+                .equals("")) return "redirect:/";
+        Token userToken = tokenRepository.findTokenByToken(token);
+        if(userToken == null) {
+            postRepository.save(new Post("Anonymous", text));
+        } else {
+            postRepository.save(new Post(userToken.login, text));
+        }
         return "redirect:/";
     }
 
     @GetMapping("/login")
     public String login(@CookieValue(value = "token", defaultValue = "null") String token,
                         Model model) {
-        if(tokens.containsKey(token)) return "redirect:/";
+        Token userToken = tokenRepository.findTokenByToken(token);
+        if(userToken != null) return "redirect:/";
         model.addAttribute("status","no_login");
         return "login";
     }
@@ -58,34 +83,41 @@ public class GreetingController {
             @RequestParam(name="password", required=true) String password,
             @RequestParam(name="password_again", required = true) String passwordAgain,
             HttpServletResponse response) {
-        if(userList.containsKey(login)) return "redirect:/login";
         if(!password.equals(passwordAgain)) return "redirect:/login";
-
-        userList.put(login, new User(login, password));
+        User findUser = userRepository.findUserByLogin(login);
+        if(findUser != null) return "redirect:/login";
+        User user = new User(login, password);
+        userRepository.save(user);
         addToken(login, response);
         return "redirect:/";
     }
 
     @GetMapping("/unlogin")
     public String unlogin(@CookieValue(value = "token", defaultValue = "null") String token) {
-        tokens.remove(token);
+        tokenRepository.deleteByToken(token);
         return "redirect:/";
     }
 
-    public static void addToken(String login, HttpServletResponse response) {
+    public void addToken(String login, HttpServletResponse response) {
         String token = UUID.randomUUID().toString();
         response.addCookie(createCookie(token));
-        tokens.put(token, userList.get(login));
+        tokenRepository.save(new Token(token, login));
     }
 
-    public static Cookie createCookie(String token) {
+    public Cookie createCookie(String token) {
         Cookie cookie = new Cookie("token", token);
         cookie.setPath("/");
         cookie.setMaxAge(-1);
         return cookie;
     }
 
-    public static boolean checkPassword(String login, String password) {
-        return !userList.containsKey(login) || !userList.get(login).password.equals(password);
+    public boolean checkPassword(String login, String password) {
+        User findUser = userRepository.findUserByLogin(login);
+        if(findUser == null) return false;
+        return findUser.password.equals(hashPassword(password));
+    }
+
+    public static String hashPassword(String password) {
+            return DigestUtils.sha256Hex(password);
     }
 }

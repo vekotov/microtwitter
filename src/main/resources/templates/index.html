@@ -50,9 +50,9 @@
       <input type="submit" value="tweet">
     </form>
   </div>
-  <div class="post" th:each="post : ${postList}">
+  <div class="post" th:each="i : ${#numbers.sequence(postList.size() - 1, 0, -1)}" th:with="post=${postList[i]}">
     <b><div th:text="${post.author}">verygoodlogin</div></b>
-    <div th:text="${post.text}" class="text">
+    <div style="white-space: pre-wrap" th:text="${post.text}" class="text">
       I am a hero you know that?
     </div>
   </div>

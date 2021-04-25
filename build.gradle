@@ -6,7 +6,7 @@ plugins {
 
 group = 'ru.vekotov'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+sourceCompatibility = '15'
 
 configurations {
 	compileOnly {
@@ -23,6 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.data:spring-data-mongodb'
 	implementation 'org.mongodb:mongodb-driver-sync'
+	implementation 'commons-codec:commons-codec'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -1,14 +1,11 @@
 package ru.vekotov.microtwitter;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "tokens")
 public class Token {
-    String token;
-    String login;
-
-    public Token(String token, String login) {
-        this.token = token;
-        this.login = login;
-    }
-
     public String getToken() {
         return token;
     }
@@ -25,11 +22,13 @@ public class Token {
         this.login = login;
     }
 
-    @Override
-    public String toString() {
-        return "Token{" +
-                "token='" + token + '\'' +
-                ", login='" + login + '\'' +
-                '}';
+    public Token(String token, String login) {
+        this.token = token;
+        this.login = login;
     }
+
+    @Id
+    @Indexed(unique = true)
+    String token;
+    String login;
 }
