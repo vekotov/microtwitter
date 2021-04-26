@@ -5,8 +5,8 @@ plugins {
 }
 
 group = 'ru.vekotov'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '15'
+version = '0.0.2-SNAPSHOT'
+sourceCompatibility = '14'
 
 configurations {
 	compileOnly {

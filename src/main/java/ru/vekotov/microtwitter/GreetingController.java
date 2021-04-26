@@ -86,7 +86,7 @@ public class GreetingController {
         if(!password.equals(passwordAgain)) return "redirect:/login";
         User findUser = userRepository.findUserByLogin(login);
         if(findUser != null) return "redirect:/login";
-        User user = new User(login, password);
+        User user = new User(login, hashPassword(password));
         userRepository.save(user);
         addToken(login, response);
         return "redirect:/";
