@@ -15,8 +15,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.util.UUID;
 
-import static ru.vekotov.microtwitter.MicrotwitterApplication.*;
-
 @Controller
 @EnableMongoRepositories
 @EntityScan
@@ -32,9 +30,11 @@ public class GreetingController {
 
     @GetMapping("/")
     public String index(@CookieValue(value = "token", defaultValue = "null") String token,
+                        @RequestParam(name="err", required = false, defaultValue = "no") String error,
                         Model model) {
         model.addAttribute("postList", postRepository.findAll());
         Token userToken = tokenRepository.findTokenByToken(token);
+        model.addAttribute("err", error);
         if(userToken != null) model.addAttribute("status", "yes_login");
         else model.addAttribute("status","no_login");
         return "index";
@@ -42,13 +42,14 @@ public class GreetingController {
 
     @PostMapping("/create_post")
     public String createPost(
-            @RequestParam(name="text") String text,
+            @RequestParam(name = "text") String text,
             @CookieValue(value = "token", defaultValue = "null") String token) {
+        if(text.length() > 500) return "redirect:/?err=too_long_message";
         if(text
                 .replace(" ", "")
                 .replace("\t", "")
                 .replace("\n", "")
-                .equals("")) return "redirect:/";
+                .equals("")) return "redirect:/?err=text_empty";
         Token userToken = tokenRepository.findTokenByToken(token);
         if(userToken == null) {
             postRepository.save(new Post("Anonymous", text));
@@ -60,32 +61,46 @@ public class GreetingController {
 
     @GetMapping("/login")
     public String login(@CookieValue(value = "token", defaultValue = "null") String token,
+                        @RequestParam(name="err", required = false, defaultValue = "no") String error,
                         Model model) {
         Token userToken = tokenRepository.findTokenByToken(token);
-        if(userToken != null) return "redirect:/";
-        model.addAttribute("status","no_login");
+        if(userToken != null) return "redirect:/?err=already_login";
+        model.addAttribute("err", error);
+
         return "login";
     }
 
     @PostMapping("/login")
     public String postLogin(
-            @RequestParam(name="login") String login,
-            @RequestParam(name="password") String password,
+            @RequestParam(name = "login") String login,
+            @RequestParam(name = "password") String password,
             HttpServletResponse response) {
-        if(checkPassword(login, password)) return "redirect:/login";
+        if(login.length() == 0 || password.length() == 0) return "redirect:/login?err=login_password_or_login_empty";
+        if(userRepository.findUserByLogin(login) == null) return "redirect:/login?err=login_no_such_user";
+        if(!checkPassword(login, password)) return "redirect:/login?err=login_wrong_password";
+
         addToken(login, response);
         return "redirect:/";
     }
 
     @PostMapping("/register")
     public String postRegister(
-            @RequestParam(name="login", required=true) String login,
-            @RequestParam(name="password", required=true) String password,
-            @RequestParam(name="password_again", required = true) String passwordAgain,
+            @RequestParam(name="login") String login,
+            @RequestParam(name="password") String password,
+            @RequestParam(name="password_again") String passwordAgain,
+            Model model,
             HttpServletResponse response) {
-        if(!password.equals(passwordAgain)) return "redirect:/login";
+        model.addAttribute("login_result", "null");
+        if(login.length() == 0 || password.length() == 0) {
+            return "redirect:/login?err=register_password_or_login_empty";
+        }
+        if(!password.equals(passwordAgain)) {
+            return "redirect:/login?err=register_passwords_not_equal";
+        }
         User findUser = userRepository.findUserByLogin(login);
-        if(findUser != null) return "redirect:/login";
+        if(findUser != null) {
+            return "redirect:/login?err=register_user_already_exist";
+        }
         User user = new User(login, hashPassword(password));
         userRepository.save(user);
         addToken(login, response);

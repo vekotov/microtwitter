@@ -25,12 +25,22 @@
     <div class="head-link">
       <a href="/last_posts">Last Posts</a>
     </div>
-    <div class="head-link" th:switch="${status}">
-      <a th:case="'no_login'" href="/login">Login</a>
-      <a th:case="'yes_login'" href="/unlogin">Unlogin</a>
+    <div class="head-link">
+      <a href="/login">Login</a>
     </div>
   </div>
   <div>
+    <div th:switch="${err}">
+      <div th:case="'login_password_or_login_empty'">
+        Login or password can't be empty! <br>
+      </div>
+      <div th:case="'login_no_such_user'">
+        User with this login doesn't exist! <br>
+      </div>
+      <div th:case="'login_wrong_password'">
+        Wrong password! <br>
+      </div>
+    </div>
     <form name="login" method="post" action="/login">
       Login: <input name="login">
       <br> <br>
@@ -39,7 +49,17 @@
       <input type="submit" value="Login">
     </form>
     <br>
-
+    <div th:switch="${err}">
+      <div th:case="'register_password_or_login_empty'">
+        Login or password can't be empty! <br>
+      </div>
+      <div th:case="'register_passwords_not_equal'">
+        Passwords doesn't equal! <br>
+      </div>
+      <div th:case="'register_user_already_exist'">
+        User with this login already exists! <br>
+      </div>
+    </div>
     <form name="register" method="post" action="/register">
       Login: <input name="login">
       <br> <br>

@@ -45,6 +45,16 @@
   </div>
   <div class="create_post">
     <form name="create_post" method="post" action="/create_post">
+      <div th:switch="${err}">
+        <div th:case="'text_empty'">
+          Tweet text can't be empty!
+          <br>
+        </div>
+        <div th:case="'too_long_message'">
+          Your message is too long! Max: 500 symbols.
+          <br>
+        </div>
+      </div>
       <textarea name="text" cols="35" rows="5"></textarea>
       <br>
       <input type="submit" value="tweet">
